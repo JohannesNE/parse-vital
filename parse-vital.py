@@ -148,7 +148,7 @@ print(body)
 # Check that all packets have been parsed
 summed_body_datalen = sum([x.packet.datalen + 5 for x in body])
 
-print("Total file size:   " + str(total_file_size))
-print("Summed packet len: " + str(summed_body_datalen) + "\nheaderlen is 20")
+print("Total file size                  : " + str(total_file_size))
+print("Summed packetlen + headerlen (20): " + str(summed_body_datalen + 20))
 if (total_file_size != summed_body_datalen + header.headerlen + 10):
     warnings.warn("The summed datalen to not match the filesize")
