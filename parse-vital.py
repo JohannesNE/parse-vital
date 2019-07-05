@@ -41,7 +41,7 @@ devinfo_str = Struct(
 trkinfo_str = Struct(
     "trkid" / WORD,
     "rec_type" / Byte,
-    "recfmt" / Byte,
+    "recfmt" / OneOf(Byte, [1, 6]), # Code only tested for float(1) and WORD(6). Others should work as well.
     "name" / String,
     "unit" / String,
     "minval" / float_,
@@ -119,31 +119,40 @@ header_str = Struct(
     "prog_ver" / DWORD
 )
 
-body_str = GreedyRange(Struct(
-    "packet" / Struct(
-        "type" / Byte,
-        "datalen" / DWORD,
-        "data" / Switch(this.type,
-                        {
-                            # Save Devinfo, For some reason needs padding to match datalen
-                            9: Padded(this.datalen, devinfo_str),
-                            # SAVE_TRKINFO
-                            0: Padded(this.datalen, trkinfo_str) * save_format_hook,
-                            1: Padded(this.datalen, rec_str),  # SAVE_REC
-                            # 6: Padded(this.datalen, cmd_str, # SAVE_CMD
-                        },
-                        default=Padding(this.datalen))  # Skip data of len datalen if type is unknown
-    )
-))
+body_str = Struct(
+                           "packet" / Struct(
+                               "type" / Byte,
+                               "datalen" / DWORD,
+                               "data" / Switch(this.type,
+                                               {
+                                                   # Save Devinfo, For some reason needs padding to match datalen
+                                                   9: Padded(this.datalen, devinfo_str),
+                                                   # SAVE_TRKINFO
+                                                   0: Padded(this.datalen, trkinfo_str) * save_format_hook,
+                                                   # SAVE_REC
+                                                   1: Padded(this.datalen, rec_str),
+                                                   # 6: Padded(this.datalen, cmd_str, # SAVE_CMD
+                                               },
+                                               default=Padding(this.datalen))  # Skip data of len datalen if type is unknown
+                           )
+                       )
 
 with gzip.GzipFile(ipath, 'rb') as f:
     # the last 4 bits of a gzip files is its unpacked size
     total_file_size = f.seek(0, io.SEEK_END)
     f.seek(0)
     header = header_str.parse_stream(f)
-    body = body_str.parse_stream(f)
 
-print(body)
+    # Loop until stream error
+    body = ListContainer()
+    completed = False
+    while not completed:
+        try:
+            body.append(body_str.parse_stream(f))
+        except StreamError:
+            print("End of stream reached")
+            completed = True
+
 
 # Check that all packets have been parsed
 summed_body_datalen = sum([x.packet.datalen + 5 for x in body])
@@ -152,3 +161,11 @@ print("Total file size                  : " + str(total_file_size))
 print("Summed packetlen + headerlen (20): " + str(summed_body_datalen + 20))
 if (total_file_size != summed_body_datalen + header.headerlen + 10):
     warnings.warn("The summed datalen to not match the filesize")
+
+
+print(body)
+
+
+
+
+Container
