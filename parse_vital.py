@@ -3,14 +3,22 @@
 # Vital File Format:    https://vitaldb.net/docs/document?documentId=1S_orMIzhL9XlWDArqh3h4rAp_IRXJs8kL7n07vAJhU8
 
 
+
 import gzip
 from construct import *
 import warnings
 import io
+import collections
 
 class Vital:
     def __init__(self, path):
         self.load_vital(path)
+
+    def get_tackinfo(self):
+        # Get all track info containers
+        return ListContainer([x.packet.data for x in self.file.body if x.packet.type == 0])
+    
+    #TODO create get_rec(id or name)
 
     def load_vital(self, path):
         # Data types
@@ -54,6 +62,14 @@ class Vital:
             "adc_offset" / double_,
             "montype" / Byte,
             "devid" / DWORD
+        )
+
+        # CMD sructure
+        cmd_str = Struct(
+            "cmd" / Byte,
+            "cmd_str" / Computed(lambda this: collections.defaultdict(lambda: 'Unknown CMD', {5: 'ORDER', 6: 'RESET_EVENTS'})[this.cmd]),
+            "cnt" / If(this.cmd == 5, WORD),
+            "trkids" / If(this.cmd == 5, WORD[this.cnt]),
         )
 
         recfmt_str = Switch(this.recfmt,
@@ -137,7 +153,7 @@ class Vital:
                                     0: Padded(this.datalen, trkinfo_str) * save_format_hook,
                                     # SAVE_REC
                                     1: Padded(this.datalen, rec_str),
-                                    # 6: Padded(this.datalen, cmd_str, # SAVE_CMD
+                                    6: Padded(this.datalen, cmd_str), # SAVE_CMD
                                 },
                                 default=Padding(this.datalen))  # Skip data of len datalen if type is unknown
             )
