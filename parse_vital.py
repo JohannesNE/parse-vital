@@ -10,15 +10,40 @@ import warnings
 import io
 import collections
 
+class Track:
+    def __init__(self, vital_obj, trkid):
+        # Get rec from trkid
+        self.info, = (trk for trk in vital_obj.track_info if trk.trkid == trkid)
+        self.recs = [rec for rec in vital_obj.recs if rec.trkid == trkid]
+
+
+
 class Vital:
     def __init__(self, path):
         self.load_vital(path)
-
-    def get_tackinfo(self):
-        # Get all track info containers
-        return ListContainer([x.packet.data for x in self.file.body if x.packet.type == 0])
+        self.track_info = ListContainer([packet.data for packet in self.file.body if packet.type == 0])
+        self.recs = ListContainer([packet.data for packet in self.file.body if packet.type == 1])
     
-    #TODO create get_rec(id or name)
+    def get_track(self, trkid = None, name = None):
+        '''
+        Returns record. Can be called with either name or trkid.
+        If both are given, they are tested to match.
+        '''
+
+        if trkid is None and name is None:
+            raise ValueError('get_rec expected either trkid or name')
+        
+        # Get trkid if name is given
+        if not name is None:
+            trkid_from_name, = (x.trkid for x in self.track_info if x.name == name)
+
+            if not trkid is None:
+                assert trkid == trkid_from_name
+            
+            trkid = trkid_from_name
+        
+        return Track(self, trkid)
+
 
     def load_vital(self, path):
         # Data types
@@ -139,24 +164,23 @@ class Vital:
 
         # Body
         body_str = Struct(
-            "packet" / Struct(
-                "type" / OneOf(Byte, [0, 1, 9, 6]),
-                "type_str" /
-                Computed(lambda this: {0: 'TRKINFO', 1: 'REC',
-                                    6: 'CMD', 9: 'DEVINFO'}[this.type]),
-                "datalen" / DWORD,
-                "data" / Switch(this.type,
-                                {
-                                    # Save Devinfo, For some reason needs padding to match datalen
-                                    9: Padded(this.datalen, devinfo_str),
-                                    # SAVE_TRKINFO
-                                    0: Padded(this.datalen, trkinfo_str) * save_format_hook,
-                                    # SAVE_REC
-                                    1: Padded(this.datalen, rec_str),
-                                    6: Padded(this.datalen, cmd_str), # SAVE_CMD
-                                },
-                                default=Padding(this.datalen))  # Skip data of len datalen if type is unknown
-            )
+            "type" / OneOf(Byte, [0, 1, 9, 6]),
+            "type_str" /
+            Computed(lambda this: {0: 'TRKINFO', 1: 'REC',
+                                6: 'CMD', 9: 'DEVINFO'}[this.type]),
+            "datalen" / DWORD,
+            "data" / Switch(this.type,
+                            {
+                                # Save Devinfo, For some reason needs padding to match datalen
+                                9: Padded(this.datalen, devinfo_str),
+                                # SAVE_TRKINFO
+                                0: Padded(this.datalen, trkinfo_str) * save_format_hook,
+                                # SAVE_REC
+                                1: Padded(this.datalen, rec_str),
+                                6: Padded(this.datalen, cmd_str), # SAVE_CMD
+                            },
+                            default=Padding(this.datalen))  # Skip data of len datalen if type is unknown
+            
         )
 
         with gzip.GzipFile(path, 'rb') as f:
@@ -176,11 +200,11 @@ class Vital:
                     completed = True
 
         # Check that all packets have been parsed
-        summed_body_datalen = sum([x.packet.datalen + 5 for x in body])
+        self.summed_datalen = sum([x.datalen + 5 for x in body]) + header.headerlen + 10
 
-        print("Total file size                  : " + str(total_file_size))
-        print("Summed packetlen + headerlen (20): " + str(summed_body_datalen + 20))
-        if (total_file_size != summed_body_datalen + header.headerlen + 10):
-            warnings.warn("The summed datalen to not match the filesize")
+        print("Total file size: " + str(total_file_size/1000) + "kB")
+        assert total_file_size == self.summed_datalen, "The summed datalen does not match the filesize"
 
         self.file = Container(header=header, body=body)
+
+
