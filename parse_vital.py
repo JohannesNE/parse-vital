@@ -38,7 +38,7 @@ class Track:
             ----------------
             ''')
 
-    def to_data_frame(self, concat_list = True):
+    def to_pandas_ts(self, concat_list = True):
         '''
         Convert track to data frame with time and (real) value
         '''
