@@ -9,13 +9,53 @@ from construct import *
 import warnings
 import io
 import collections
+import textwrap
+import pandas as pd
 
 class Track:
     def __init__(self, vital_obj, trkid):
         # Get rec from trkid
         self.info, = (trk for trk in vital_obj.track_info if trk.trkid == trkid)
         self.recs = [rec for rec in vital_obj.recs if rec.trkid == trkid]
+        
+        # Convert values using adc_gain and adc_offset
+        for i, rec in enumerate(self.recs):
+            if self.info.rec_type == 1:
+                self.recs[i]['values'].vals_real = [val * self.info.adc_gain + self.info.adc_offset for val in rec['values'].vals]
+            elif self.info.rec_type == 2:
+                self.recs[i]['values'].vals_real = rec['values'].val[0] * self.info.adc_gain + self.info.adc_offset 
 
+        
+    def __str__(self):
+        n_recs = [rec['values'].num for rec in self.recs]
+        
+        return textwrap.dedent(f'''
+            ===TRACK INFO===
+            name:           {self.info.name}
+            unit:           {self.info.unit}
+            starttime:      {self.recs[0].dt.format()} ({self.recs[0].dt.humanize()})
+            measurements:   {sum(n_recs)} in {len(n_recs)} blocks
+            ----------------
+            ''')
+
+    def to_data_frame(self, concat_list = True):
+        '''
+        Convert track to data frame with time and (real) value
+        '''
+
+        freq = f'{1000/self.info.srate}ms'
+
+
+        pandas_ts = []
+
+        for rec in self.recs:
+            index = pd.date_range(start = rec.dt.datetime, freq = freq, periods = rec['values'].num)
+            pandas_ts.append(pd.Series(rec['values'].vals_real, index = index))
+        
+        if concat_list:
+            pandas_ts = pd.concat(pandas_ts)
+
+        return pandas_ts
 
 
 class Vital:
