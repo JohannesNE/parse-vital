@@ -24,11 +24,11 @@ class Track:
         
         # Convert values using adc_gain and adc_offset
         for i, rec in enumerate(self.recs):
-            if self.info.rec_type == 1:
+            if self.info.rec_type == 1: # Waveform
                 self.recs[i]['values'].vals_real = [val * self.info.adc_gain + self.info.adc_offset for val in rec['values'].vals]
-            elif self.info.rec_type == 2:
+            elif self.info.rec_type == 2: # Numeric
                 self.recs[i]['values'].vals_real = rec['values'].val[0] * self.info.adc_gain + self.info.adc_offset 
-            elif self.info.rec_type == 5:
+            elif self.info.rec_type == 5: # String (Annotation)
                 self.recs[i]['values'].vals_real = rec['values'].sval
                 self.recs[i]['values'].num = 1 # There is only one value (string) per rec
             else: 
@@ -68,17 +68,25 @@ class Track:
         if concat_list:
             pandas_ts = pd.concat(pandas_ts)
 
+        if self.info.rec_type == 1:
+            # Fix to specific frequency. Fills missing values with NaN
+            pandas_ts = pandas_ts.asfreq(freq)
+
         return pandas_ts
 
-    def save_to_file(self, folder_path = 'converted', file_name = None):
+    def save_to_file(self, folder_path = None, file_name = None):
         '''
         Save csv file containing track
         '''
         if file_name is None:
             file_name = Path(self.info._io.name).stem + '_' + self.info.name + '.csv'
         
+        if folder_path is None:
+            folder_path = 'converted'
+
         folder_path = Path(folder_path)
 
+        #Create folder if it does not exist
         folder_path.mkdir(parents=True, exist_ok=True)
 
         file_path = folder_path / file_name
@@ -100,7 +108,7 @@ class Vital:
     
     def __str__(self):
         '''
-        Human readable description when printed
+        Human readable description when Vital object is printed
         '''
         return textwrap.dedent(f'''
             ======= VITAL FILE INFO =======
@@ -136,6 +144,22 @@ class Vital:
         
         return Track(self, trkid)
 
+    def save_tracks_to_file(self, trackids = None, names = None, path = None, save_all = False):
+        '''
+        Save tracks to individual csv files
+        '''
+        if save_all:
+            tracks = [self.get_track(trackid) for trackid in [track_info.trkid for track_info in self.track_info]]
+        elif trackids is None and names is None:
+            raise ValueError('Expected either trkids, names or save_all')
+        else:
+            if names is not None:
+                tracks = [self.get_track(name) for name in names]
+            else: 
+                tracks = [self.get_track(trackid) for trackid in trackids]
+        
+        for track in tracks:
+            track.save_to_file()
 
     def load_vital(self, path):
         # Data types
@@ -301,11 +325,19 @@ class Vital:
 
 # When run as __main__ (from command line)
 def main(args):
-    print(args)
+    vitfile = Vital(args.vitalfile)
+    if args.info:
+        print(vitfile)
+    else:
+        #TODO output Save tracks
 
 if __name__ == "__main__":
     import sys
     import argparse
     
     parser = argparse.ArgumentParser(description='Convert .Vital file to .csv files')
-    parser.add_argument
+    parser.add_argument('vitalfile', type=str, help = 'Input file (.vital)')
+    parser.add_argument('--outdir', '-o', type=str, help = 'Directory for csv files (default=./converted)')
+    parser.add_argument('--info', '-I', action='store_true', help = 'Info about .vital file')
+
+    main(parser.parse_args())
