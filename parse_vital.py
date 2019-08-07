@@ -30,12 +30,12 @@ class Track:
         n_recs = [rec['values'].num for rec in self.recs]
         
         return textwrap.dedent(f'''
-            ===TRACK INFO===
+            ======= TRACK INFO =======
             name:           {self.info.name}
             unit:           {self.info.unit}
             starttime:      {self.recs[0].dt.format()} ({self.recs[0].dt.humanize()})
             measurements:   {sum(n_recs)} in {len(n_recs)} blocks
-            ----------------
+            --------------------------
             ''')
 
     def to_pandas_ts(self, concat_list = True):
