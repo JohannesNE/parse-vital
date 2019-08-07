@@ -8,6 +8,7 @@ import gzip
 from construct import *
 import warnings
 import io
+from pathlib import Path
 import collections
 import textwrap
 import pandas as pd
@@ -69,15 +70,38 @@ class Track:
 
         return pandas_ts
 
+    def save_to_file(self, folder_path = 'converted', file_name = None):
+        '''
+        Save csv file containing track
+        '''
+        if file_name is None:
+            file_name = Path(self.info._io.name).stem + '_' + self.info.name + '.csv'
+        
+        folder_path = Path(folder_path)
+
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        file_path = folder_path / file_name
+
+        pandas_ts = self.to_pandas_ts()
+        pandas_ts.to_csv(file_path, header = False)
+        
+        
+
 
 class Vital:
+    '''
+    Class that holds an entire .vital file as a dict
+    '''
     def __init__(self, path):
         self.load_vital(path)
         self.track_info = ListContainer([packet.data for packet in self.file.body if packet.type == 0])
         self.recs = ListContainer([packet.data for packet in self.file.body if packet.type == 1])
     
     def __str__(self):
-        
+        '''
+        Human readable description when printed
+        '''
         return textwrap.dedent(f'''
             ======= VITAL FILE INFO =======
             Path:           {self.file.header._io.filename}
@@ -275,4 +299,13 @@ class Vital:
 
         self.file = Container(header=header, body=body)
 
+# When run as __main__ (from command line)
+def main(args):
+    print(args)
 
+if __name__ == "__main__":
+    import sys
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Convert .Vital file to .csv files')
+    parser.add_argument
