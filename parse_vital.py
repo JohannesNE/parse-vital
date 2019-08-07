@@ -13,6 +13,9 @@ import textwrap
 import pandas as pd
 
 class Track:
+    '''
+    Object which contains all packets from one track
+    '''
     def __init__(self, vital_obj, trkid):
         # Get rec from trkid
         self.info, = (trk for trk in vital_obj.track_info if trk.trkid == trkid)
@@ -24,6 +27,11 @@ class Track:
                 self.recs[i]['values'].vals_real = [val * self.info.adc_gain + self.info.adc_offset for val in rec['values'].vals]
             elif self.info.rec_type == 2:
                 self.recs[i]['values'].vals_real = rec['values'].val[0] * self.info.adc_gain + self.info.adc_offset 
+            elif self.info.rec_type == 5:
+                self.recs[i]['values'].vals_real = rec['values'].sval
+                self.recs[i]['values'].num = 1 # There is only one value (string) per rec
+            else: 
+                raise Exception(f'Unknown rec_type: {self.info.rec_type}')
 
         
     def __str__(self):
@@ -43,7 +51,11 @@ class Track:
         Convert track to data frame with time and (real) value
         '''
 
-        freq = f'{1000/self.info.srate}ms'
+        try:
+            # In events srate us 0. As there is only one value per rec, it can just be set to None
+            freq = f'{1000/self.info.srate}ms'
+        except ZeroDivisionError:
+            freq = None
 
 
         pandas_ts = []
@@ -64,6 +76,22 @@ class Vital:
         self.track_info = ListContainer([packet.data for packet in self.file.body if packet.type == 0])
         self.recs = ListContainer([packet.data for packet in self.file.body if packet.type == 1])
     
+    def __str__(self):
+        
+        return textwrap.dedent(f'''
+            ======= VITAL FILE INFO =======
+            Path:           {self.file.header._io.filename}
+            Size:           {self.summed_datalen/1000.0} KB
+            Format Ver.:    {self.file.header.format_ver}
+            Tracks (n):     {len(self.track_info)}
+
+            ----------- Tracks ------------
+            ''') + \
+            pd.DataFrame(self.track_info)[['trkid', 'name', 'unit']].to_string(index = False) + \
+            textwrap.dedent('''
+            -------------------------------
+            ''')
+
     def get_track(self, trkid = None, name = None):
         '''
         Returns record. Can be called with either name or trkid.
