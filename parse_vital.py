@@ -94,6 +94,7 @@ class Track:
         pandas_ts = self.to_pandas_ts()
         pandas_ts.to_csv(file_path, header = False)
         
+        print(f'Saved {file_path}')
         
 
 
@@ -154,12 +155,12 @@ class Vital:
             raise ValueError('Expected either trkids, names or save_all')
         else:
             if names is not None:
-                tracks = [self.get_track(name) for name in names]
+                tracks = [self.get_track(name = name) for name in names]
             else: 
-                tracks = [self.get_track(trackid) for trackid in trackids]
+                tracks = [self.get_track(trackid = trackid) for trackid in trackids]
         
         for track in tracks:
-            track.save_to_file()
+            track.save_to_file(folder_path=path)
 
     def load_vital(self, path):
         # Data types
@@ -312,24 +313,42 @@ class Vital:
                 try:
                     body.append(body_str.parse_stream(f))
                 except StreamError:
-                    print("End of stream reached")
+                    #print("End of stream reached")
                     completed = True
 
         # Check that all packets have been parsed
         self.summed_datalen = sum([x.datalen + 5 for x in body]) + header.headerlen + 10
 
-        print("Total file size: " + str(total_file_size/1000) + "kB")
+        #print("Total file size: " + str(total_file_size/1000) + "kB")
         assert total_file_size == self.summed_datalen, "The summed datalen does not match the filesize"
 
         self.file = Container(header=header, body=body)
 
 # When run as __main__ (from command line)
 def main(args):
-    vitfile = Vital(args.vitalfile)
+    try:
+        vitfile = Vital(args.vitalfile)
+    except FileNotFoundError as err:
+        print(err)
+        return
+
     if args.info:
         print(vitfile)
     else:
         #TODO output Save tracks
+        if args.trkid is not None:
+            try:
+                trkid_int = [int(id) for id in args.trkid]
+            except ValueError as err:
+                print('Error: Expected --trkid as list of integers')
+                print(err)
+                return
+        else:
+            trkid_int = None
+
+        vitfile.save_tracks_to_file(trackids = trkid_int, names = args.name, save_all = args.saveall, path=args.outdir)
+        
+
 
 if __name__ == "__main__":
     import sys
@@ -339,5 +358,9 @@ if __name__ == "__main__":
     parser.add_argument('vitalfile', type=str, help = 'Input file (.vital)')
     parser.add_argument('--outdir', '-o', type=str, help = 'Directory for csv files (default=./converted)')
     parser.add_argument('--info', '-I', action='store_true', help = 'Info about .vital file')
+    parser.add_argument('--trkid', '-t', nargs='+', help = 'Id(s) of track(s) to save')
+    parser.add_argument('--name', '-n', nargs='+', help = 'Name(s) of track(s) to save')
+    parser.add_argument('--saveall', action='store_true', help = 'Save all tracks')
+    
 
     main(parser.parse_args())
