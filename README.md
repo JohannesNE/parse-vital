@@ -4,6 +4,10 @@ This python module parses binary files recorded by [Vital Recorder](https://vita
 
 Parsing is done using [Construct](https://construct.readthedocs.io/en/latest/).
 
+> Warning. This code has only been sporadically tested on a limited set of test data.  
+
+## Examples
+
 `vital = Vital('path/to/file.vital')` creates a Vital object.
 
 `print(vital)` shows file info. E.g:
