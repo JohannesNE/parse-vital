@@ -355,7 +355,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description='Convert .Vital file to .csv files')
-    parser.add_argument('vitalfile', type=str, help = 'Input file (.vital)')
+    parser.add_argument('vitalfile', type=str, help = 'Path to input file (.vital)')
     parser.add_argument('--outdir', '-o', type=str, help = 'Directory for csv files (default=./converted)')
     parser.add_argument('--info', '-I', action='store_true', help = 'Info about .vital file')
     parser.add_argument('--trkid', '-t', nargs='+', help = 'Id(s) of track(s) to save')
