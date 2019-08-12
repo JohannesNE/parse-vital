@@ -8,9 +8,11 @@ Parsing is done using [Construct](https://construct.readthedocs.io/en/latest/).
 
 ## Examples
 
-`vital = Vital('path/to/file.vital')` creates a Vital object.
+### Create a Vital object
+`vital = Vital('path/to/file.vital')` 
 
-`print(vital)` shows file info. E.g:
+### Show file info
+`print(vital)` 
 
 ```
 ======= VITAL FILE INFO =======
@@ -40,10 +42,13 @@ Tracks (n):     16
 -------------------------------
 ```
 
-`vital_track = vital.get_track(name = 'track_name')` returns an object containing a single track (`get_track()` can also be called with `trkid = id`).
+### Return object containing a single track
+`vital_track = vital.get_track(name = 'track_name')` 
 
-`print(vital_track)` shows track info. E.g:
+or `vital_track = vital.get_track(trkid = trkid)` 
 
+### Show track info
+`print(vital_track)` 
 
 ```
 ======= TRACK INFO =======
@@ -54,12 +59,14 @@ measurements:   25 in 25 blocks
 --------------------------
 ```
 
-`vital_track.to_pandas_ts()` converts track to Pandas time series object.
+### Convert track to Pandas time series object
+`vital_track.to_pandas_ts()` 
 
-`vital_track.save_to_file('dir_path/')` saves track to CSV file.
+### Save track to CSV file
+`vital_track.save_to_file('dir_path/')` 
 
 ## Command line interface
-`python3 ./parse_vital --help`
+`$ python3 ./parse_vital --help`
 
 ```
 usage: parse_vital.py [-h] [--outdir OUTDIR] [--info]
