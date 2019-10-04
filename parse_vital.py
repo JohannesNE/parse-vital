@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Load data from .vital files from Vital Recorder
 # Vital Recorder:       https://vitaldb.net/vital-recorder
 # Vital File Format:    https://vitaldb.net/docs/document?documentId=1S_orMIzhL9XlWDArqh3h4rAp_IRXJs8kL7n07vAJhU8
