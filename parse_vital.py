@@ -85,9 +85,6 @@ class Track:
         if file_name is None:
             file_name = Path(self.info._io.name).stem + '_' + self.info.name + '.csv'
         
-        if folder_path is None:
-            folder_path = 'converted'
-
         folder_path = Path(folder_path)
 
         #Create folder if it does not exist
@@ -163,6 +160,9 @@ class Vital:
             else: 
                 tracks = [self.get_track(trackid = trackid) for trackid in trackids]
         
+        if path is None:
+            path = self.vital_filename
+
         for track in tracks:
             track.save_to_file(folder_path=path)
 
@@ -190,6 +190,8 @@ class Vital:
 
         #print("Total file size: " + str(total_file_size/1000) + "kB")
         assert total_file_size == self.summed_datalen, "The summed datalen does not match the filesize"
+
+        self.vital_filename = Path(path).stem
 
         self.file = Container(header=header, body=body)
 
