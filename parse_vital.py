@@ -83,7 +83,7 @@ class Track:
         Save csv file containing track
         '''
         if file_name is None:
-            file_name = Path(self.info._io.name).stem + '_' + self.info.name + ('.csv.gz' if gzip else '.csv')
+            file_name = Path(self.info._io.name).stem + '_' + self.info.name + '_' + str(self.info.devid) + ('.csv.gz' if gzip else '.csv')
         
         if folder_path is None:
             folder_path = 'converted'
@@ -228,7 +228,10 @@ if __name__ == "__main__":
     import sys
     import argparse
     
-    parser = argparse.ArgumentParser(description='Convert .Vital file to .csv files')
+    parser = argparse.ArgumentParser(description='''
+    Convert .Vital file to .csv files
+    Output CSVs will be named <record name>_<track name>_<device id>.csv[.gz]
+    ''')
     parser.add_argument('vitalfile', type=str, help = 'Path to input file (.vital)')
     parser.add_argument('--outdir', '-o', type=str, help = 'Directory for csv files (default=./converted)')
     parser.add_argument('--info', '-I', action='store_true', help = 'Info about .vital file')
