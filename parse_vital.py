@@ -78,13 +78,16 @@ class Track:
 
         return pandas_ts
 
-    def save_to_file(self, folder_path = None, file_name = None):
+    def save_to_file(self, folder_path = None, file_name = None, gzip = False):
         '''
         Save csv file containing track
         '''
         if file_name is None:
-            file_name = Path(self.info._io.name).stem + '_' + self.info.name + '.csv'
+            file_name = Path(self.info._io.name).stem + '_' + self.info.name + ('.csv.gz' if gzip else '.csv')
         
+        if folder_path is None:
+            folder_path = 'converted'
+
         folder_path = Path(folder_path)
 
         #Create folder if it does not exist
@@ -93,7 +96,7 @@ class Track:
         file_path = folder_path / file_name
 
         pandas_ts = self.to_pandas_ts()
-        pandas_ts.to_csv(file_path, header = False)
+        pandas_ts.to_csv(file_path, header = False, compression='gzip' if gzip else 'infer')
         
         print(f'Saved {file_path}')
         
@@ -146,7 +149,7 @@ class Vital:
         
         return Track(self, trkid)
 
-    def save_tracks_to_file(self, trackids = None, names = None, path = None, save_all = False):
+    def save_tracks_to_file(self, trackids = None, names = None, path = None, save_all = False, gzip = False):
         '''
         Save tracks to individual csv files
         '''
@@ -164,7 +167,7 @@ class Vital:
             path = self.vital_filename
 
         for track in tracks:
-            track.save_to_file(folder_path=path)
+            track.save_to_file(folder_path=path, gzip = gzip)
 
     def load_vital(self, path):
         
@@ -217,7 +220,7 @@ def main(args):
         else:
             trkid_int = None
 
-        vitfile.save_tracks_to_file(trackids = trkid_int, names = args.name, save_all = args.saveall, path=args.outdir)
+        vitfile.save_tracks_to_file(trackids = trkid_int, names = args.name, save_all = args.saveall, path=args.outdir, gzip=args.gzip)
         
 
 
@@ -232,6 +235,7 @@ if __name__ == "__main__":
     parser.add_argument('--trkid', '-t', nargs='+', help = 'Id(s) of track(s) to save')
     parser.add_argument('--name', '-n', nargs='+', help = 'Name(s) of track(s) to save')
     parser.add_argument('--saveall', action='store_true', help = 'Save all tracks')
+    parser.add_argument('--gzip', action='store_true', help = 'Compress all tracks with gzip')
     
 
     main(parser.parse_args())
