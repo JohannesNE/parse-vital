@@ -83,7 +83,7 @@ class Track:
         Save csv file containing track
         '''
         if file_name is None:
-            file_name = Path(self.info._io.name).stem + '_' + self.info.name + '_' + str(self.info.devid) + ('.csv.gz' if gzip else '.csv')
+            file_name = Path(self.info._io.name).stem + '_signal_' + self.info.name + '_' + str(self.info.devid) + ('.csv.gz' if gzip else '.csv')
         
         if folder_path is None:
             folder_path = 'converted'
