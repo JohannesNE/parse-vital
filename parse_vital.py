@@ -109,6 +109,17 @@ class Vital:
     def __init__(self, path):
         self.load_vital(path)
         self.track_info = ListContainer([packet.data for packet in self.file.body if packet.type == 0])
+        # Event tracks may be duplicated in trackinfo.
+        # Keep only the first EVENTS track.
+        track_names = [trk.name for trk in self.track_info]
+        i_event = [i for i, x in enumerate(track_names) if x == "EVENT"]
+
+        if(len(i_event) > 1):
+            i_event.pop() # Keep one instance
+
+            for i in sorted(i_event, reverse=True):
+                del self.track_info[i]
+
         self.recs = ListContainer([packet.data for packet in self.file.body if packet.type == 1])
     
     def __str__(self):
