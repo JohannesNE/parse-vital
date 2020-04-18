@@ -181,12 +181,17 @@ class Vital:
             # Loop until stream error
             body = ListContainer()
             completed = False
+            data_read = header.headerlen + 10
+            print('')
             while not completed:
                 try:
                     body.append(body_str.parse_stream(f))
+                    data_read = data_read + body[-1].datalen + 5 
+                    print(f'Data read: {round(data_read/1000)} of {total_file_size/1000} kB', end="\r", flush=True)
                 except StreamError:
                     #print("End of stream reached")
                     completed = True
+                    print()
 
         # Check that all packets have been parsed
         self.summed_datalen = sum([x.datalen + 5 for x in body]) + header.headerlen + 10
