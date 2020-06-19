@@ -72,10 +72,6 @@ class Track:
         if concat_list:
             pandas_ts = pd.concat(pandas_ts)
 
-        if self.info.rec_type == 1:
-            # Fix to specific frequency. Fills missing values with NaN
-            pandas_ts = pandas_ts.asfreq(freq)
-
         return pandas_ts
 
     def save_to_file(self, folder_path = None, file_name = None, gzip = False):
