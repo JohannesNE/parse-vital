@@ -81,7 +81,7 @@ class Track:
         Save csv file containing track
         '''
         if file_name is None:
-            file_name = Path(self.info._io.name).stem + '_' + self.devname + '_' + self.info.name + ('.csv.gz' if gzip else '.csv')
+            file_name = Path(self.info._io.name).stem + '_' + self.info.name + '_' + str(self.info.trkid) + ('.csv.gz' if gzip else '.csv')
         
         if folder_path is None:
             folder_path = 'converted'
@@ -139,7 +139,7 @@ class Vital:
             textwrap.dedent('''
             -------------------------------
             ''')
-
+ 
     def get_track(self, trkid = None, name = None):
         '''
         Returns record. Can be called with either name or trkid.
@@ -160,12 +160,36 @@ class Vital:
         
         return Track(self, trkid)
 
+    def save_track_info(self, path):
+        '''
+        Save csv file with track info
+        '''
+
+        track_df = pd.DataFrame(self.track_info)[['trkid', 'name', 'unit', 'srate', 'devid']]
+        dev_df = pd.DataFrame(self.dev_info)[['devid', 'devname']]
+
+        track_df = pd.merge(track_df, dev_df, how = 'left', on = 'devid')
+
+        path = Path(path)
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        track_df.to_csv(path / Path('tracks.csv'), index=False)
+
+        print('Saved Track Info (tracks.csv)')
+
     def save_tracks_to_file(self, trackids = None, names = None, path = None, save_all = False, gzip = False):
         '''
         Save tracks to individual csv files
         '''
+        
+        if path is None:
+            path = self.vital_filename
+
         if save_all:
             tracks = [self.get_track(trackid) for trackid in [track_info.trkid for track_info in self.track_info]]
+            self.save_track_info(path)
+
         elif trackids is None and names is None:
             raise ValueError('Expected either trkids, names or save_all')
         else:
@@ -173,9 +197,6 @@ class Vital:
                 tracks = [self.get_track(name = name) for name in names]
             else: 
                 tracks = [self.get_track(trackid = trackid) for trackid in trackids]
-        
-        if path is None:
-            path = self.vital_filename
 
         for track in tracks:
             track.save_to_file(folder_path=path, gzip = gzip)
