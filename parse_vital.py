@@ -25,6 +25,8 @@ class Track:
         # Get rec from trkid
         self.info, = (trk for trk in vital_obj.track_info if trk.trkid == trkid)
         self.recs = [rec for rec in vital_obj.recs if rec.trkid == trkid]
+        self.devname = 'VITAL' if self.info.devid == 0 else \
+            [dev.devname for dev in vital_obj.dev_info if dev.devid == self.info.devid][-1]
         
         # Convert values using adc_gain and adc_offset
         for i, rec in enumerate(self.recs):
@@ -79,7 +81,7 @@ class Track:
         Save csv file containing track
         '''
         if file_name is None:
-            file_name = Path(self.info._io.name).stem + '_signal_' + self.info.name + '_' + str(self.info.devid) + ('.csv.gz' if gzip else '.csv')
+            file_name = Path(self.info._io.name).stem + '_' + self.devname + '_' + self.info.name + ('.csv.gz' if gzip else '.csv')
         
         if folder_path is None:
             folder_path = 'converted'
@@ -105,6 +107,8 @@ class Vital:
     def __init__(self, path):
         self.load_vital(path)
         self.track_info = ListContainer([packet.data for packet in self.file.body if packet.type == 0])
+        self.dev_info = ListContainer([packet.data for packet in self.file.body if packet.type == 9])
+
         # Event tracks may be duplicated in trackinfo.
         # Keep only the first EVENTS track.
         track_names = [trk.name for trk in self.track_info]
