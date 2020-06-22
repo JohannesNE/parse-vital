@@ -4,7 +4,7 @@ This python module parses binary files recorded by [Vital Recorder](https://vita
 
 Parsing is done using [Construct](https://construct.readthedocs.io/en/latest/).
 
-> ⚠️ **Warning:** This code has only been sporadically tested on a limited set of test data. Please validate converted files. **For most usecases, saving the file as EDF from Vital Lab would be recommended instead.**
+> ⚠️ **Warning:** This code has only been tested on a limited set of test data. Please validate converted files. **For most usecases, saving the file as EDF from Vital Lab would be recommended instead.**
 
 ## Pypy
 For large files (above a few MB) the program is very slow. Using pypy speeds things up by a factor of 10-100.
