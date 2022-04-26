@@ -11,6 +11,23 @@ For large files (above a few MB) the program is very slow. Using pypy speeds thi
 
 To use pypy, install pypy3-dev, use it in a virtualenv (to make pip work on linux), `pip install numpy pandas construct arrow`.
 
+**edit:** Pypy now works with conda:
+install conda, then:
+
+```
+conda config --set channel_priority strict
+conda create -c conda-forge -n pypy pypy
+conda activate pypy
+conda install -c conda-forge numpy pandas construct arrow
+```
+
+afterwards link `python` to the `pypy3` interpreter within the bin directory of the env
+
+```
+cd ~/miniconda3/envs/pypy/bin/
+mv python python_bak 
+ln -s pypy3 python
+```
 
 ## Examples
 
